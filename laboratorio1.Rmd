@@ -1,0 +1,111 @@
+---
+title: "Análisis de Rentabilidad de Productos"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    vertical_layout: scroll
+---
+
+```{r setup, include=FALSE}
+library(readr)
+library(dplyr)
+library(DT)  
+
+# Cargar los datos
+tienda <- read_csv("C:/Users/barri/Documents/UFM/2024/Segundo Semestre/Data Product/flexdashboards/Lab1/tienda.csv", locale = locale(encoding = "UTF-8"))
+```
+
+# Productos Más Rentables {data-icon=fa-bar-chart}
+
+##  
+
+### Producto mas rentable
+
+```{r Mas Rentable, fig.height=50}
+# Probar con un código mínimo para ver si el problema persiste
+rentabilidad_productos <- tienda %>%
+  group_by(`Product Name`) %>%  # Usar comillas invertidas para el nombre de la columna con espacio
+  summarise(
+    total_sales = sum(Sales, na.rm = TRUE),  # Sumar ventas, eliminando valores NA
+    total_profit = sum(Profit, na.rm = TRUE),  # Sumar ganancias, eliminando valores NA
+    avg_profit = mean(Profit, na.rm = TRUE)  # Calcular promedio de ganancias, eliminando valores NA
+  ) %>%
+  arrange(desc(total_profit))
+
+DT::datatable(rentabilidad_productos, options = list(pageLength = 10))
+
+
+
+```
+
+# Productos Menos Rentables {data-icon=fa-exclamation-triangle}
+##
+### Producto menos rentable
+
+```{r}
+tienda %>%
+  arrange(Profit) %>%
+  head(10) %>%
+  DT::datatable(options = list(pageLength = 10))
+
+```
+
+# Análisis de Segmentos de Ventas y Ganancia {data-icon=fa-pie-chart}
+
+## Row {data-width=350}
+
+### Análisis por Categoría
+
+```{r}
+segmento_ventas_ganancias <- tienda %>%
+  group_by(Category) %>%  
+  summarise(
+    TotalSales = sum(Sales),
+    TotalProfit = sum(Profit),
+    AverageProfit = mean(Profit)  
+  ) %>%
+  arrange(desc(TotalProfit))  
+
+
+DT::datatable(segmento_ventas_ganancias, options = list(pageLength = 5))
+
+```
+
+## Row {data-width=350}
+
+### Análisis por Región
+
+```{r}
+segmento_ventas_ganancias_region <- tienda %>%
+  group_by(Region) %>%  
+  summarise(
+    TotalSales = sum(Sales),
+    TotalProfit = sum(Profit),
+    AverageProfit = mean(Profit)  
+  ) %>%
+  arrange(desc(TotalProfit))  
+
+DT::datatable(segmento_ventas_ganancias_region, options = list(pageLength = 5))
+
+```
+
+## Row {data-width=350}
+
+### Análisis por Segmento de Clientes
+
+```{r}
+segmento_ventas_ganancias_cliente <- tienda %>%
+  group_by(Segment) %>%  
+  summarise(
+    TotalSales = sum(Sales),
+    TotalProfit = sum(Profit),
+    AverageProfit = mean(Profit)  
+  ) %>%
+  arrange(desc(TotalProfit))  
+
+DT::datatable(segmento_ventas_ganancias_cliente, options = list(pageLength = 5))
+
+```
+
+
+
