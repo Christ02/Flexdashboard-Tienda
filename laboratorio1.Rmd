@@ -17,12 +17,14 @@ library(ggmap)
 library(tidyr)
 library(scales)
 library(kableExtra)
+library(plotly)
 
 
 tienda <- read_csv("~/GitHub/Flexdashboard-Tienda/tienda.csv", locale = locale(encoding = "UTF-8"))
 Tienda_coords <- read_csv("~/GitHub/Flexdashboard-Tienda/Tienda_coords.csv", locale = locale(encoding = "UTF-8"))
 
 ```
+
 
 # Productos Más Rentables {data-icon=fa-bar-chart}
 
@@ -59,18 +61,18 @@ top_10_rentables <- rentabilidad_productos %>%
 
 ##
 
+
 ```{r, fig.width=10, fig.height=8}
+
 ggplot(top_10_rentables, aes(x = reorder(`Product Name`, -Total_Profit), y = Total_Profit)) +
   geom_bar(stat = "identity", fill = "darkgreen") +
   coord_flip() +
-  labs(title = "Top 10 Productos Más Rentables", x = "Producto", y = "Rentabilidad Total") +
+  labs(title = "Rentabilidad de Todos los Productos", x = "Producto", y = "Rentabilidad Total") +
   theme_minimal() +
   theme(
     axis.text.x = element_text(size = 10),
     axis.text.y = element_text(size = 10),
-    plot.title = element_text(size = 14, face = "bold")
-  )
-
+    plot.title = element_text(size = 14, face = "bold"))
 ```
 
 
@@ -141,6 +143,13 @@ DT::datatable(segmento_ventas_ganancias_cliente, options = list(pageLength = 5))
 # Cargar el paquete leaflet
 library(leaflet)
 
+# Wrap your data with SharedData for crosstalk interactivity
+shared_tienda_coords <- SharedData$new(Tienda_coords)
+
+# Add a filter_slider for Profit
+filter_slider("Profit", "Filtrar por Ganancia", shared_tienda_coords, ~Profit, 
+              step = 500, width = '100%')
+
 # Crear un mapa básico centrado en las coordenadas promedio de tu dataset
 mapa <- leaflet(Tienda_coords) %>%
   addTiles() %>%  # Agregar capa de mapa base
@@ -165,4 +174,9 @@ mapa <- leaflet(Tienda_coords) %>%
 mapa
 
 ```
+
+
+
+
+
 
