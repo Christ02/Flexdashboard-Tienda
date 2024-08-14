@@ -9,10 +9,19 @@ output:
 ```{r setup, include=FALSE}
 library(readr)
 library(dplyr)
-library(DT)  
+library(DT)
+library(ggplot2)
+library(leaflet)
+library(crosstalk)
+library(ggmap)
+library(tidyr)
+library(scales)
 
 # Cargar los datos
-tienda <- read_csv("C:/Users/barri/Documents/UFM/2024/Segundo Semestre/Data Product/flexdashboards/Lab1/tienda.csv", locale = locale(encoding = "UTF-8"))
+tienda <- read_csv("~/GitHub/Flexdashboard-Tienda/tienda.csv", locale = locale(encoding = "UTF-8"))
+
+Tienda_coords <- read_csv("~/GitHub/Flexdashboard-Tienda/Tienda_coords.csv", locale = locale(encoding = "UTF-8"))
+
 ```
 
 # Productos Más Rentables {data-icon=fa-bar-chart}
@@ -107,5 +116,38 @@ DT::datatable(segmento_ventas_ganancias_cliente, options = list(pageLength = 5))
 
 ```
 
+# Analisis Geografico
 
+## Row {data-width=350}
+
+### Analisis geográfico de Ventas e Ingresos de la Tienda
+
+```{r}
+# Cargar el paquete leaflet
+library(leaflet)
+
+# Crear un mapa básico centrado en las coordenadas promedio de tu dataset
+mapa <- leaflet(Tienda_coords) %>%
+  addTiles() %>%  # Agregar capa de mapa base
+  setView(lng = mean(Tienda_coords$lon, na.rm = TRUE), 
+          lat = mean(Tienda_coords$lat, na.rm = TRUE), 
+          zoom = 5) %>%  # Ajustar el zoom inicial según sea necesario
+  addCircleMarkers(
+    lng = ~lon,
+    lat = ~lat,
+    radius = 5,  # Tamaño de los marcadores
+    color = "blue",  # Color de los marcadores
+    popup = ~paste(
+      "<b>City:</b>", City, "<br>",
+      "<b>State:</b>", State, "<br>",
+      "<b>Country:</b>", Country, "<br>",
+      "<b>Sales:</b>", Sales, "<br>",
+      "<b>Profit:</b>", Profit
+    )
+  )
+
+# Mostrar el mapa
+mapa
+
+```
 
