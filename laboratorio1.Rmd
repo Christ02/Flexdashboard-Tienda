@@ -16,6 +16,8 @@ library(crosstalk)
 library(ggmap)
 library(tidyr)
 library(scales)
+library(kableExtra)
+
 
 tienda <- read_csv("~/GitHub/Flexdashboard-Tienda/tienda.csv", locale = locale(encoding = "UTF-8"))
 Tienda_coords <- read_csv("~/GitHub/Flexdashboard-Tienda/Tienda_coords.csv", locale = locale(encoding = "UTF-8"))
