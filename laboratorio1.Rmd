@@ -17,9 +17,7 @@ library(ggmap)
 library(tidyr)
 library(scales)
 
-# Cargar los datos
 tienda <- read_csv("~/GitHub/Flexdashboard-Tienda/tienda.csv", locale = locale(encoding = "UTF-8"))
-
 Tienda_coords <- read_csv("~/GitHub/Flexdashboard-Tienda/Tienda_coords.csv", locale = locale(encoding = "UTF-8"))
 
 ```
@@ -31,33 +29,48 @@ Tienda_coords <- read_csv("~/GitHub/Flexdashboard-Tienda/Tienda_coords.csv", loc
 ### Producto mas rentable
 
 ```{r Mas Rentable, fig.height=50}
-# Probar con un código mínimo para ver si el problema persiste
+
 rentabilidad_productos <- tienda %>%
-  group_by(`Product Name`) %>%  # Usar comillas invertidas para el nombre de la columna con espacio
-  summarise(
-    total_sales = sum(Sales, na.rm = TRUE),  # Sumar ventas, eliminando valores NA
-    total_profit = sum(Profit, na.rm = TRUE),  # Sumar ganancias, eliminando valores NA
-    avg_profit = mean(Profit, na.rm = TRUE)  # Calcular promedio de ganancias, eliminando valores NA
-  ) %>%
-  arrange(desc(total_profit))
+  group_by(`Product Name`) %>%
+  summarize(Total_Profit = sum(Profit, na.rm = TRUE)) %>%
+  arrange(desc(Total_Profit))  #
 
-DT::datatable(rentabilidad_productos, options = list(pageLength = 10))
+producto_mas_rentable <- rentabilidad_productos %>%
+  slice_max(Total_Profit, n = 3)
 
+producto_menos_rentable <- rentabilidad_productos %>%
+  slice_min(Total_Profit, n = 3)
+
+producto_mas_rentable %>%
+  kable("html") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"))
+
+producto_menos_rentable %>%
+  kable("html") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"))
+
+top_10_rentables <- rentabilidad_productos %>%
+  top_n(10, wt = Total_Profit)
 
 
 ```
 
-# Productos Menos Rentables {data-icon=fa-exclamation-triangle}
 ##
-### Producto menos rentable
 
-```{r}
-tienda %>%
-  arrange(Profit) %>%
-  head(10) %>%
-  DT::datatable(options = list(pageLength = 10))
+```{r, fig.width=10, fig.height=8}
+ggplot(top_10_rentables, aes(x = reorder(`Product Name`, -Total_Profit), y = Total_Profit)) +
+  geom_bar(stat = "identity", fill = "darkgreen") +
+  coord_flip() +
+  labs(title = "Top 10 Productos Más Rentables", x = "Producto", y = "Rentabilidad Total") +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(size = 10),
+    axis.text.y = element_text(size = 10),
+    plot.title = element_text(size = 14, face = "bold")
+  )
 
 ```
+
 
 # Análisis de Segmentos de Ventas y Ganancia {data-icon=fa-pie-chart}
 

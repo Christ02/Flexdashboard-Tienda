@@ -12,3 +12,5 @@ producto_menos_rentable <- tienda %>%
 
 producto_mas_rentable
 producto_menos_rentable
+
+install.packages("ggmap")
