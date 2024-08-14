@@ -2,27 +2,83 @@
 title: "Análisis de Rentabilidad de Productos"
 output: 
   flexdashboard::flex_dashboard:
-    orientation: rows
-    vertical_layout: scroll
+    orientation: columns
+    vertical_layout: fill
 ---
 
 ```{r setup, include=FALSE}
 library(readr)
 library(dplyr)
-library(DT)  
+library(DT)
+library(leaflet)
+library(leaflet.extras)
+library(flexdashboard)
+library(ggplot2)
+library(plotly)
+library(crosstalk)
 
-# Cargar los datos
-tienda <- read_csv("C:/Users/barri/Documents/UFM/2024/Segundo Semestre/Data Product/flexdashboards/Lab1/tienda.csv", locale = locale(encoding = "UTF-8"))
+# Load and prepare data
+tienda <- read_csv("tienda.csv", locale = locale(encoding = "ISO-8859-1"))
+
+# For more realistic coordinates, assume each region corresponds to a typical U.S. location.
+# If you had actual coordinates, you'd use those instead.
+
+# Assigning more realistic lat/lon based on known region mappings
+region_coords <- data.frame(
+  Region = c("West", "East", "South", "Central"),
+  lat = c(34.0522, 40.7128, 29.7604, 41.8781),  # LA, NY, Houston, Chicago
+  lon = c(-118.2437, -74.0060, -95.3698, -87.6298)
+)
+
+# Merge with your data
+tienda <- tienda %>%
+  left_join(region_coords, by = "Region")
+
+# Filter the desired categories (optional, as per your requirement)
+tienda_filtered <- tienda %>%
+  filter(Category %in% c("Technology", "Office Supplies", "Furniture"))
+
+# Summarize data by Category
+segmento_ventas_ganancias <- tienda_filtered %>%
+  group_by(Category) %>%  
+  summarise(
+    TotalSales = sum(Sales, na.rm = TRUE),
+    TotalProfit = sum(Profit, na.rm = TRUE),
+    AverageProfit = mean(Profit, na.rm = TRUE)
+  ) %>%
+  arrange(desc(TotalProfit))
+
+# Summarize data by Region
+segmento_ventas_ganancias_region <- tienda_filtered %>%
+  group_by(Region) %>%  
+  summarise(
+    TotalSales = sum(Sales, na.rm = TRUE),
+    TotalProfit = sum(Profit, na.rm = TRUE),
+    AverageProfit = mean(Profit, na.rm = TRUE)
+  ) %>%
+  arrange(desc(TotalProfit))
+
+# Summarize data by Segment
+segmento_ventas_ganancias_cliente <- tienda_filtered %>%
+  group_by(Segment) %>%  
+  summarise(
+    TotalSales = sum(Sales, na.rm = TRUE),
+    TotalProfit = sum(Profit, na.rm = TRUE),
+    AverageProfit = mean(Profit, na.rm = TRUE)
+  ) %>%
+  arrange(desc(TotalProfit))
+
+# Create SharedData objects
+shared_segmento <- SharedData$new(segmento_ventas_ganancias)
+shared_region <- SharedData$new(segmento_ventas_ganancias_region)
+shared_segmento_cliente <- SharedData$new(segmento_ventas_ganancias_cliente)
+shared_tienda <- SharedData$new(tienda_filtered)
 ```
 
 # Productos Más Rentables {data-icon=fa-bar-chart}
 
-##  
-
 ### Producto mas rentable
-
 ```{r Mas Rentable, fig.height=50}
-# Probar con un código mínimo para ver si el problema persiste
 rentabilidad_productos <- tienda %>%
   group_by(`Product Name`) %>%  # Usar comillas invertidas para el nombre de la columna con espacio
   summarise(
@@ -33,79 +89,86 @@ rentabilidad_productos <- tienda %>%
   arrange(desc(total_profit))
 
 DT::datatable(rentabilidad_productos, options = list(pageLength = 10))
-
-
-
 ```
 
-# Productos Menos Rentables {data-icon=fa-exclamation-triangle}
-##
-### Producto menos rentable
 
+# Productos Menos Rentables {data-icon=fa-exclamation-triangle}
+
+### Producto menos rentable
 ```{r}
 tienda %>%
   arrange(Profit) %>%
   head(10) %>%
   DT::datatable(options = list(pageLength = 10))
-
 ```
 
 # Análisis de Segmentos de Ventas y Ganancia {data-icon=fa-pie-chart}
 
-## Row {data-width=350}
+## Column{data-width=50%}
+```{r}
+filter_checkbox("Category", "Seleccionar Categoría", shared_segmento, ~Category)
+```
+
+## Row
 
 ### Análisis por Categoría
-
 ```{r}
-segmento_ventas_ganancias <- tienda %>%
-  group_by(Category) %>%  
-  summarise(
-    TotalSales = sum(Sales),
-    TotalProfit = sum(Profit),
-    AverageProfit = mean(Profit)  
-  ) %>%
-  arrange(desc(TotalProfit))  
-
-
-DT::datatable(segmento_ventas_ganancias, options = list(pageLength = 5))
-
+datatable(shared_segmento, extensions = 'Scroller', options = list(pageLength = 5, deferRender = TRUE, scrollY = 300))
 ```
 
-## Row {data-width=350}
 
+### Gráfico de Profit Promedio por Categoría
+```{r}
+# Use the SharedData directly in ggplot
+p <- ggplot(shared_segmento, aes(x = Category, y = AverageProfit, fill = Category)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Comparación de Profit Promedio por Categoría", x = "Categoría", y = "Profit Promedio") +
+  theme_minimal()
+
+ggplotly(p)
+```
+
+## Row {data-height=350}
 ### Análisis por Región
-
 ```{r}
-segmento_ventas_ganancias_region <- tienda %>%
-  group_by(Region) %>%  
-  summarise(
-    TotalSales = sum(Sales),
-    TotalProfit = sum(Profit),
-    AverageProfit = mean(Profit)  
-  ) %>%
-  arrange(desc(TotalProfit))  
-
-DT::datatable(segmento_ventas_ganancias_region, options = list(pageLength = 5))
-
+datatable(shared_region, extensions = 'Scroller', options = list(pageLength = 5, deferRender = TRUE, scrollY = 300))
 ```
 
-## Row {data-width=350}
 
 ### Análisis por Segmento de Clientes
-
 ```{r}
-segmento_ventas_ganancias_cliente <- tienda %>%
-  group_by(Segment) %>%  
-  summarise(
-    TotalSales = sum(Sales),
-    TotalProfit = sum(Profit),
-    AverageProfit = mean(Profit)  
-  ) %>%
-  arrange(desc(TotalProfit))  
-
-DT::datatable(segmento_ventas_ganancias_cliente, options = list(pageLength = 5))
-
+datatable(shared_segmento_cliente, extensions = 'Scroller', options = list(pageLength = 5, deferRender = TRUE, scrollY = 300))
 ```
 
+
+# Análisis Geográfico de Ventas y Ganancias {data-icon=fa-globe}
+
+## Row {data-width=800}
+### Mapa de Ventas y Ganancias
+```{r}
+# Create a filter input for the Region
+filter_select("Region", "Seleccionar Región", shared_tienda, ~Region, multiple = TRUE)
+
+# Create a slider filter for Profit
+filter_slider("Profit", "Ganancia", shared_tienda, column = ~Profit, step = 1000, width = 300)
+```
+
+
+```{r geocoding}
+leaflet(shared_tienda) %>%
+  addTiles() %>%
+  addCircleMarkers(
+    lng = ~lon, lat = ~lat,
+    radius = ~sqrt(Profit)/1000,  # Ajustar el tamaño según las ganancias
+    color = "blue",
+    fillOpacity = 0.5,
+    popup = ~paste(City, State, "<br>Ventas Totales:", Sales, "<br>Ganancia Total:", Profit)
+  )
+```
+
+```{r}
+datatable(shared_tienda, extensions = "Scroller", style = "bootstrap", class = "compact", 
+          options = list(deferRender = TRUE, scrollY = 300, scroller = TRUE, pageLength = 5))
+```
 
 
